@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radio PWA Prototipo: API vs WebRTC</title>
-    <!-- Configuración PWA básica -->
     <meta name="theme-color" content="#1a1a2e">
     <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22RadioPWA%22,%22short_name%22:%22RadioPWA%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22#1a1a2e%22}">
-    
     <style>
         :root {
             --bg-color: #0f0f1a;
@@ -16,10 +14,9 @@
             --accent-webrtc: #ff007f;
             --text-color: #ffffff;
         }
-
         body {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             display: flex;
@@ -27,23 +24,10 @@
             align-items: center;
             padding: 20px;
         }
-
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
+        header { text-align: center; margin-bottom: 20px; }
         h1 { margin: 5px 0; font-size: 24px; }
         p { color: #8a8a9e; margin: 5px 0; }
-
-        .container {
-            width: 100%;
-            max-width: 500px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
+        .container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 20px; }
         .card {
             background-color: var(--card-bg);
             border-radius: 16px;
@@ -55,21 +39,11 @@
             text-align: center;
             border: 1px solid rgba(255,255,255,0.05);
         }
-
         .card.api { border-top: 4px solid var(--accent-api); }
         .card.webrtc { border-top: 4px solid var(--accent-webrtc); }
-
-        .badge {
-            font-size: 11px;
-            text-transform: uppercase;
-            font-weight: bold;
-            padding: 4px 8px;
-            border-radius: 20px;
-            margin-bottom: 15px;
-        }
+        .badge { font-size: 11px; text-transform: uppercase; font-weight: bold; padding: 4px 8px; border-radius: 20px; margin-bottom: 15px; }
         .api .badge { background: rgba(0, 210, 255, 0.1); color: var(--accent-api); }
         .webrtc .badge { background: rgba(255, 0, 127, 0.1); color: var(--accent-webrtc); }
-
         .cover-art {
             width: 180px;
             height: 180px;
@@ -85,10 +59,8 @@
             transition: all 0.3s ease;
             font-size: 40px;
         }
-
         .track-title { font-weight: bold; font-size: 18px; margin-bottom: 5px; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
         .track-artist { color: #a0a0b8; font-size: 14px; margin-bottom: 20px; }
-
         button {
             background: none;
             border: none;
@@ -101,30 +73,12 @@
             transition: transform 0.2s, background 0.2s;
             width: 80%;
         }
-
         .btn-api { background: linear-gradient(135deg, #00d2ff, #0066ff); }
         .btn-webrtc { background: linear-gradient(135deg, #ff007f, #7f00ff); }
         button:active { transform: scale(0.95); }
-
-        .status-light {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #555;
-            display: inline-block;
-            margin-right: 8px;
-        }
+        .status-light { width: 12px; height: 12px; border-radius: 50%; background: #555; display: inline-block; margin-right: 8px; }
         .status-active { background: #00ff66; box-shadow: 0 0 10px #00ff66; }
-
-        .latency-meter {
-            margin-top: 15px;
-            font-size: 13px;
-            color: #a0a0b8;
-            background: rgba(0,0,0,0.2);
-            padding: 8px 12px;
-            border-radius: 8px;
-            width: 90%;
-        }
+        .latency-meter { margin-top: 15px; font-size: 13px; color: #a0a0b8; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 8px; width: 90%; }
         .latency-val { font-weight: bold; color: #00ff66; }
     </style>
 </head>
@@ -136,16 +90,13 @@
     </header>
 
     <div class="container">
-        
-        <!-- REPRODUCTOR TRADICIONAL (API AUDIO) -->
+        <!-- REPRODUCTOR TRADICIONAL -->
         <div class="card api">
             <span class="badge">API Audio Tradicional (Tu URL)</span>
             <div id="cover" class="cover-art">📻</div>
             <div id="title" class="track-title">Presiona reproducir</div>
             <div id="artist" class="track-artist">ZenoMedia Stream</div>
-            
             <button id="playBtn" class="btn-api">REPRODUCIR RADIO</button>
-            
             <div class="latency-meter">
                 Latencia estimada: <span style="color: #ffaa00;">5,000 - 12,000 ms</span>
             </div>
@@ -159,18 +110,15 @@
                 <span id="webrtcStatus">Estudio virtual cerrado</span>
             </div>
             <p style="font-size: 13px; margin-bottom: 20px;">Prueba la latencia cero enviando tu micrófono a un canal local de tiempo real simulado (bucle local RTCPeerConnection).</p>
-            
             <button id="micBtn" class="btn-webrtc">ENTRAR EN VIVO (MIC)</button>
-            
             <div class="latency-meter">
                 Latencia WebRTC medible: <span id="rtcLatency" class="latency-val">0 ms</span>
             </div>
         </div>
-
     </div>
 
     <script>
-        // --- 1. CONFIGURACIÓN DEL REPRODUCTOR TRADICIONAL ---
+        // 1. CONFIGURACIÓN DEL REPRODUCTOR TRADICIONAL
         const STREAM_URL = "https://zeno.fm";
         let audioHtml = new Audio();
         audioHtml.src = STREAM_URL;
@@ -192,8 +140,8 @@
                     runMetadataSimulation();
                     metadataInterval = setInterval(runMetadataSimulation, 15000);
                 }).catch(err => {
-                    alert("Error al conectar con la señal de Zeno. Revisa tu conexión.");
-                    console.error("Error de reproducción:", err);
+                    alert("Error al conectar con la señal de Zeno.");
+                    console.error(err);
                 });
             } else {
                 audioHtml.pause();
@@ -205,25 +153,22 @@
 
         function runMetadataSimulation() {
             if(!isPlaying) return;
-            
             const cancionesPrueba = [
                 { title: "Blinding Lights", artist: "The Weeknd" },
                 { title: "Despacito", artist: "Luis Fonsi" },
                 { title: "Shape of You", artist: "Ed Sheeran" },
                 { title: "Clocks", artist: "Coldplay" }
             ];
-
             const randomTrack = cancionesPrueba[Math.floor(Math.random() * cancionesPrueba.length)];
             titleEl.innerText = randomTrack.title;
             artistEl.innerText = randomTrack.artist;
 
-            // Integración de búsqueda con iTunes Search API de Apple
             const query = encodeURIComponent(`${randomTrack.artist} ${randomTrack.title}`);
             fetch(`https://apple.com{query}&entity=song&limit=1`)
                 .then(res => res.json())
                 .then(data => {
                     if(data.results && data.results.length > 0) {
-                        const imgUrl = data.results.artworkUrl100.replace('100x100bb', '400x400bb');
+                        const imgUrl = data.results[0].artworkUrl100.replace('100x100bb', '400x400bb');
                         coverDiv.style.backgroundImage = `url('${imgUrl}')`;
                         coverDiv.innerText = "";
                     } else {
@@ -237,7 +182,7 @@
                 });
         }
 
-        // --- 2. CONFIGURACIÓN DEL EXPERIMENTO WEBRTC ---
+        // 2. CONFIGURACIÓN DEL EXPERIMENTO WEBRTC
         const micBtn = document.getElementById('micBtn');
         const webrtcLight = document.getElementById('webrtcLight');
         const webrtcStatus = document.getElementById('webrtcStatus');
@@ -262,3 +207,15 @@
                     peerConnection2.onicecandidate = e => e.candidate && peerConnection1.addIceCandidate(e.candidate);
 
                     peerConnection2.ontrack = e => {
+                        const remoteAudio = document.createElement('audio');
+                        remoteAudio.srcObject = e.streams[0];
+                        remoteAudio.autoplay = true;
+                        remoteAudio.muted = true;
+                    };
+
+                    const offer = await peerConnection1.createOffer();
+                    await peerConnection1.setLocalDescription(offer);
+                    await peerConnection2.setRemoteDescription(offer);
+
+                    const answer = await peerConnection2.createAnswer();
+                    await peerConnection2.setLocalDescription(answer);
