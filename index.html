@@ -142,7 +142,7 @@
             <span class="badge">API Audio Tradicional (Tu URL)</span>
             <div id="cover" class="cover-art">📻</div>
             <div id="title" class="track-title">Presiona reproducir</div>
-            <div id="artist" class="track-artist">stream.zeno.fm</div>
+            <div id="artist" class="track-artist">ZenoMedia Stream</div>
             
             <button id="playBtn" class="btn-api">REPRODUCIR RADIO</button>
             
@@ -217,13 +217,13 @@
             titleEl.innerText = randomTrack.title;
             artistEl.innerText = randomTrack.artist;
 
-            // Integración limpia de búsqueda con iTunes Search API de Apple
+            // Integración de búsqueda con iTunes Search API de Apple
             const query = encodeURIComponent(`${randomTrack.artist} ${randomTrack.title}`);
             fetch(`https://apple.com{query}&entity=song&limit=1`)
                 .then(res => res.json())
                 .then(data => {
                     if(data.results && data.results.length > 0) {
-                        const imgUrl = data.results[0].artworkUrl100.replace('100x100bb', '400x400bb');
+                        const imgUrl = data.results.artworkUrl100.replace('100x100bb', '400x400bb');
                         coverDiv.style.backgroundImage = `url('${imgUrl}')`;
                         coverDiv.innerText = "";
                     } else {
@@ -261,3 +261,4 @@
                     peerConnection1.onicecandidate = e => e.candidate && peerConnection2.addIceCandidate(e.candidate);
                     peerConnection2.onicecandidate = e => e.candidate && peerConnection1.addIceCandidate(e.candidate);
 
+                    peerConnection2.ontrack = e => {
