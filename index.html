@@ -70,7 +70,6 @@
         .api .badge { background: rgba(0, 210, 255, 0.1); color: var(--accent-api); }
         .webrtc .badge { background: rgba(255, 0, 127, 0.1); color: var(--accent-webrtc); }
 
-        /* Estilos del Player Tradicional */
         .cover-art {
             width: 180px;
             height: 180px;
@@ -84,6 +83,7 @@
             background-position: center;
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             transition: all 0.3s ease;
+            font-size: 40px;
         }
 
         .track-title { font-weight: bold; font-size: 18px; margin-bottom: 5px; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
@@ -106,7 +106,6 @@
         .btn-webrtc { background: linear-gradient(135deg, #ff007f, #7f00ff); }
         button:active { transform: scale(0.95); }
 
-        /* Estilos WebRTC */
         .status-light {
             width: 12px;
             height: 12px;
@@ -141,14 +140,14 @@
         <!-- REPRODUCTOR TRADICIONAL (API AUDIO) -->
         <div class="card api">
             <span class="badge">API Audio Tradicional (Tu URL)</span>
-            <div id="cover" class="cover-art">🎵</div>
-            <div id="title" class="track-title">Cargando emisión...</div>
-            <div id="artist" class="track-artist">Zeno.fm Stream</div>
+            <div id="cover" class="cover-art">📻</div>
+            <div id="title" class="track-title">Presiona reproducir</div>
+            <div id="artist" class="track-artist">stream.zeno.fm</div>
             
             <button id="playBtn" class="btn-api">REPRODUCIR RADIO</button>
             
             <div class="latency-meter">
-                Latencia estimada: <span style="color: #ffaa00;">5.000 - 12.000 ms</span>
+                Latencia estimada: <span style="color: #ffaa00;">5,000 - 12,000 ms</span>
             </div>
         </div>
 
@@ -172,8 +171,7 @@
 
     <script>
         // --- 1. CONFIGURACIÓN DEL REPRODUCTOR TRADICIONAL ---
-        const STREAM_URL = "https://stream.zeno.fm/xdkqr4btptutv";
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const STREAM_URL = "https://zeno.fm";
         let audioHtml = new Audio();
         audioHtml.src = STREAM_URL;
         audioHtml.crossOrigin = "anonymous";
@@ -184,28 +182,30 @@
         const artistEl = document.getElementById('artist');
 
         let isPlaying = false;
+        let metadataInterval;
 
         playBtn.addEventListener('click', () => {
             if (!isPlaying) {
                 audioHtml.play().then(() => {
                     playBtn.innerText = "PAUSAR RADIO";
                     isPlaying = true;
-                    // Iniciamos simulación de metadatos al reproducir
-                    fetchMetadataSimulation();
-                }).catch(err => console.log("Error al reproducir audio:", err));
+                    runMetadataSimulation();
+                    metadataInterval = setInterval(runMetadataSimulation, 15000);
+                }).catch(err => {
+                    alert("Error al conectar con la señal de Zeno. Revisa tu conexión.");
+                    console.error("Error de reproducción:", err);
+                });
             } else {
                 audioHtml.pause();
                 playBtn.innerText = "REPRODUCIR RADIO";
                 isPlaying = false;
+                clearInterval(metadataInterval);
             }
         });
 
-        // Simulación / Extracción de metadatos e integración con iTunes API para la carátula
-        function fetchMetadataSimulation() {
+        function runMetadataSimulation() {
             if(!isPlaying) return;
             
-            // Nota: Al usar Zeno directo sin servidor intermedio, emulamos un pool de canciones comunes 
-            // de radios latinas/pop para ver el dinamismo de las carátulas. 
             const cancionesPrueba = [
                 { title: "Blinding Lights", artist: "The Weeknd" },
                 { title: "Despacito", artist: "Luis Fonsi" },
@@ -213,13 +213,11 @@
                 { title: "Clocks", artist: "Coldplay" }
             ];
 
-            // Selecciona una al azar cada 20 segundos para demostrar cómo cambia la app sola
             const randomTrack = cancionesPrueba[Math.floor(Math.random() * cancionesPrueba.length)];
-            
             titleEl.innerText = randomTrack.title;
             artistEl.innerText = randomTrack.artist;
 
-            // Buscar carátula real en iTunes API
+            // Integración limpia de búsqueda con iTunes Search API de Apple
             const query = encodeURIComponent(`${randomTrack.artist} ${randomTrack.title}`);
             fetch(`https://apple.com{query}&entity=song&limit=1`)
                 .then(res => res.json())
@@ -237,12 +235,9 @@
                     coverDiv.style.backgroundImage = "none";
                     coverDiv.innerText = "📻";
                 });
-
-            setTimeout(fetchMetadataSimulation, 20000); 
         }
 
-
-        // --- 2. CONFIGURACIÓN DEL EXPERIMENTO WEBRTC (Loopback nativo de baja latencia) ---
+        // --- 2. CONFIGURACIÓN DEL EXPERIMENTO WEBRTC ---
         const micBtn = document.getElementById('micBtn');
         const webrtcLight = document.getElementById('webrtcLight');
         const webrtcStatus = document.getElementById('webrtcStatus');
@@ -256,7 +251,13 @@
         micBtn.addEventListener('click', async () => {
             if (!isMicActive) {
                 try {
-                    // 1. Pedir acceso al micrófono nativo
                     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                     
-                    // 2. Crear conexiones de par WebRTC locales (Simula locutor -> servidor)
+                    peerConnection1 = new RTCPeerConnection();
+                    peerConnection2 = new RTCPeerConnection();
+
+                    localStream.getTracks().forEach(track => peerConnection1.addTrack(track, localStream));
+
+                    peerConnection1.onicecandidate = e => e.candidate && peerConnection2.addIceCandidate(e.candidate);
+                    peerConnection2.onicecandidate = e => e.candidate && peerConnection1.addIceCandidate(e.candidate);
+
